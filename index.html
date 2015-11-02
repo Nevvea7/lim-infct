@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.node {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+.link {
+  stroke: #999;
+  stroke-opacity: .6;
+}
+
+.node .infected {
+  fill: red;
+}
+
+</style>
+<body>
+
+<div>
+  <input type="number" id="infectionStartPoint" value="2">
+  <button onclick="infect(document.getElementById('infectionStartPoint').value)">Infect!</button>
+</div>
+
+<div>
+  <input type="number" id="infectlim" value="20">
+  <button onclick="liminfect(document.getElementById('infectlim').value)">Lim Infect!</button>
+</div>
+
+<div>
+<svg></svg>
+    
+</div>
+
+</body>
+<script src="js/d3.js"></script>
+<script>
+
+var width = 960,
+    height = 500;
+
+var color = d3.scale.category20();
+
+var force = d3.layout.force()
+    .charge(-50)
+    .linkDistance(30)
+    .size([width, height]);
+
+var svg = d3.select("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+/* =========== functions for generating the coaching graph ============== */
+function Person(id, group) {
+  this.id = id;
+  this.group = group;
+  this.version = 0;
+  this.neighbors = [];
+}
+
+function Link(source, target) {
+  this.source = source;
+  this.target = target;
+}
+
+function generateGraph(n) {
+  var ppl = [];
+  var lks = [];
+  var totalGroups = Math.ceil(Math.random() * Math.floor(n / 10));
+  console.log("group ", totalGroups);
+  var groupMap = {};
+  var students = new Set();
+  // generate n people and push them into the ppl array
+  // and randomly assign them to groups
+  for (var i = 0; i < n; i++) {
+    var group = Math.floor(Math.random() * totalGroups);
+    ppl.push(new Person(i, group));
+    if (!groupMap[group]) {
+      groupMap[group] = [];
+    }
+    groupMap[group].push(i);
+  }
+  console.log(groupMap);
+
+  // generate links between people in the same group
+  for (var g = 0; g < totalGroups; g++) {
+    var curGroup = groupMap[g];
+    if (!curGroup) continue;
+    for (var i = 0; i < curGroup.length - 1; i++) {
+      for (var j = i + 1; j < curGroup.length; j++) {
+        var p1 = curGroup[i];
+        var p2 = curGroup[j];
+        if (Math.random() > 0.4 && !students.has(p2)) {    
+          ppl[p1].neighbors.push(p2);
+          ppl[p2].neighbors.push(p1);
+          lks.push(new Link(p1, p2));
+          students.add(p2);
+        }
+      }
+    }
+  }
+  
+  var graph = { people : ppl, links : lks};
+  return graph;
+}
+
+var graph = generateGraph(150);
+
+force
+    .nodes(graph.people)
+    .links(graph.links)
+    .start();
+
+var link = svg.selectAll(".link")
+    .data(graph.links)
+  .enter().append("line")
+    .attr("class", "link")
+    .style("stroke-width", function(d) { return Math.sqrt(1); });
+
+var node = svg.selectAll(".node")
+    .data(graph.people)
+  .enter().append("circle")
+    .attr("class", "node")
+    .attr("id", function(d, i) {var result = "p" + i; return result;})
+    .attr("r", 5)
+    .style("fill", function(d) { return color(d.version); })
+    .call(force.drag);
+
+node.append("text")
+    .text(function(d) { return d.id; });
+
+node.on("click", function() {
+  var num = this.id.replace( /^\D+/g, '');
+  infect(parseInt(num));
+  console.log(num);
+});
+
+force.on("tick", function() {
+  link.attr("x1", function(d) { return d.source.x; })
+      .attr("y1", function(d) { return d.source.y; })
+      .attr("x2", function(d) { return d.target.x; })
+      .attr("y2", function(d) { return d.target.y; });
+
+  node.attr("cx", function(d) { return d.x; })
+      .attr("cy", function(d) { return d.y; });
+});
+
+/* =========== functions for infecting ============= */
+function infect(startId) {
+  var startPerson = graph.people[startId];
+  var newVersion = startPerson.version + 1;
+  var visited = new Set();
+  visited.add(startId);
+  console.log(newVersion);
+  startPerson.version = newVersion;
+  var tobeInfected = [];
+  tobeInfected.push(parseInt(startId));
+
+  var nextLevel = [];
+  var level = 0;
+  function levelInfect() {
+    var nextInfected;
+    while (tobeInfected.length > 0) {
+      nextInfected = graph.people[tobeInfected.shift()];
+      nextInfected.version = newVersion;
+      nextInfected.neighbors.forEach(function(p) {
+        if (!visited.has(p)) nextLevel.push(p);
+        visited.add(p);
+        d3.select("circle#p" + nextInfected.id)
+        .attr("class", "node infect-gr" + nextInfected.group + "-lv" + level);
+      });
+    }
+
+    if (!nextInfected) return;
+    tobeInfected = nextLevel.slice();
+    nextLevel = [];
+    d3.selectAll(".infect-gr" + nextInfected.group + "-lv" + level)
+    .transition()
+    .style("fill", function(d) { return color(d.version); })
+    .duration(500);
+    level++;
+    setTimeout(levelInfect, 500);
+
+  }
+
+  levelInfect();
+
+}
+
+// the actual groups might be different from the one assigned because links are randomly generated
+function countGroups() {
+  var ppl = graph.people;
+  var sizeMap = {};
+  var visited = new Set();
+
+  for (var i = 0; i < ppl.length; i++) {
+    if (visited.has(i)) continue;
+    visited.add(i);
+
+  } 
+}
+
+function liminfect(lim) {
+  var groups = countGroups()
+}
+
+function deinfect(startId) {
+  var startPerson = graph.people[startId];
+  var nv = startPerson.version - 1;
+
+  d3.select("circle#p" + startId)
+    .style("fill", function(d) { return color(nv); });
+
+}
+
+
+</script>
+
