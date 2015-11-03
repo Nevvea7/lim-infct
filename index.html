@@ -31,21 +31,22 @@
 </style>
 <link rel="stylesheet" type="text/css" href="css/bootstrap.css">
 <body>
-<div class="side col-lg-offset-9 col-md-offset-9">
+<div class="side col-lg-offset-9 col-md-offset-9 col-sm-offset-9">
 
   <h3>Click on any node to start an infection!</h3>
+  <h5>Maximize your browser for a better look.</h5>
 
   <label>Generate new relation graph with this number of people: (150 if left blank)</label>
-  <input type="number" id="graphSize" class="form-control col col-lg-4" min="0">
+  <input type="number" id="graphSize" class="form-control col col-lg-4" placeholder="150" min="0">
   <button class="btn btn-default mt" onclick="start(document.getElementById('graphSize').value)">Generate</button>
 
   <label>Start total infection from the node #: </label>
-  <input type="number" id="infectionStartPoint" class="form-control" value="2" min="0">
+  <input type="number" id="infectionStartPoint" class="form-control" placeholder="2, 5, 10.." min="0">
   <button class="btn btn-default mt" onclick="infect(document.getElementById('infectionStartPoint').value)">Infect!</button>
   <p>*nodes are numbered from 0 to (# of nodes - 1). If the given number is too large nothing will happen.</p>
 
   <label>Start limited infection, set the infected cap: </label>
-  <input type="number" id="infectlim" class="form-control" value="20" min="0">
+  <input type="number" id="infectlim" class="form-control" placeholder="20, 50, 100..." min="0">
   <button class="btn btn-default mt" onclick="liminfect(document.getElementById('infectlim').value)">Lim Infect!</button>
   <p>*If the groups involved in lim infect were on different versions before, they will all have the same, newest version after this.</p>
   <p>*If this number is too small, nothing will happen.</p>
@@ -71,7 +72,7 @@ var force = d3.layout.force()
     .size([width, height]);
 
 var svg = d3.select("body").append("svg")
-    .attr("class", "col-lg-9 col-md-9 col-sm-12")
+    .attr("class", "col-lg-9 col-md-9 col-sm-9")
     .attr("height", height);
 
 var graph, people;

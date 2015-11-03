@@ -2,13 +2,13 @@
 
 ## The Program
 
-**Warning** only tested in Google Chrome
+**Warning** only tested in Google Chrome.
 
-See it live [here] [http://nevvea7.github.io/lim-infct/] or just clone the repo and open index.html in your browser!
+See it live [here](http://nevvea7.github.io/lim-infct/) or just clone the repo and open index.html in your browser!
 
 Color changes indicate version changes. Sometimes the color change isn't very obvious, so look closely!
 
-Many thanks to d3.js, especially [this example] [http://bl.ocks.org/mbostock/4062045]
+Many thanks to d3.js, especially [this example](http://bl.ocks.org/mbostock/4062045)
 
 ### Generate Random Acyclic Graph
 

@@ -3,7 +3,7 @@ function start(numOfNodes) {
   numOfNodes = numOfNodes || 150;
   svg.remove();
   svg = d3.select("body").append("svg")
-    .attr("class", "col-lg-9 col-md-9 col-sm-12")
+    .attr("class", "col-lg-9 col-md-9 col-sm-9")
     .attr("height", height);
  
   // generate new graph
@@ -169,7 +169,6 @@ function infect(startId) {
   function levelInfect() {
     var nextInfected;
     while (tobeInfected.length > 0) {
-      // console.log("infect check", startId);
       nextInfected = graph.people[tobeInfected.shift()];
       nextInfected.version = newVersion;
       // assign a new class to nodes so that when level finishes d3 can easily select them all 
