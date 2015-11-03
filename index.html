@@ -107,6 +107,7 @@ function generateGraph(n) {
 }
 
 var graph = generateGraph(150);
+var people = graph.people;
 
 force
     .nodes(graph.people)
@@ -149,6 +150,7 @@ force.on("tick", function() {
 
 /* =========== functions for infecting ============= */
 function infect(startId) {
+  console.log("start check", startId)
   var startPerson = graph.people[startId];
   var newVersion = startPerson.version + 1;
   var visited = new Set();
@@ -163,13 +165,14 @@ function infect(startId) {
   function levelInfect() {
     var nextInfected;
     while (tobeInfected.length > 0) {
+      console.log("infect check", startId);
       nextInfected = graph.people[tobeInfected.shift()];
       nextInfected.version = newVersion;
+      d3.select("circle#p" + nextInfected.id)
+        .attr("class", "node infect-gr" + nextInfected.group + "-lv" + level);
       nextInfected.neighbors.forEach(function(p) {
         if (!visited.has(p)) nextLevel.push(p);
         visited.add(p);
-        d3.select("circle#p" + nextInfected.id)
-        .attr("class", "node infect-gr" + nextInfected.group + "-lv" + level);
       });
     }
 
@@ -191,19 +194,74 @@ function infect(startId) {
 
 // the actual groups might be different from the one assigned because links are randomly generated
 function countGroups() {
-  var ppl = graph.people;
   var sizeMap = {};
   var visited = new Set();
 
-  for (var i = 0; i < ppl.length; i++) {
+  // do bfs on each single graph and count their sizes
+  for (var i = 0; i < people.length; i++) {
     if (visited.has(i)) continue;
     visited.add(i);
+    var count = 0;
+    var inCurGraph = [];
+    inCurGraph.push(i);
+    while (inCurGraph.length > 0) {
+      var curPerson = graph.people[inCurGraph.shift()];
+      count++;
+      curPerson.neighbors.forEach(function(p) {
+        if (!visited.has(p)) inCurGraph.push(p);
+        visited.add(p);
+      });
+    }
 
+    if (!sizeMap[count]) sizeMap[count] = [];
+    sizeMap[count].push(i);
   } 
+  return sizeMap;
 }
 
+function findLimGroups(res, sizeMap, sizes, start, lim) {
+  // if the smallest size can't fit in the limit then just return
+  if (lim < sizes[sizes.length - 1]) return;
+  for (var i = start; i < sizes.length; i++) {
+    var curSize = sizes[i];
+    for (var j = 0; j < sizeMap[curSize].length; j++) {
+      if (lim >= curSize) {
+        console.log("lim: ", lim, ", sizes: ", sizeMap[curSize][j]);
+        lim -= sizes[i];
+        res.push(sizeMap[curSize][j]);
+      }
+    }
+  }
+}
+
+// find a working infection with greedy approach
 function liminfect(lim) {
-  var groups = countGroups()
+  var sizeMap = countGroups();
+  console.log(sizeMap);
+  var sizes = [];
+  for (k in sizeMap) {
+    if (sizeMap.hasOwnProperty(k)) {
+      sizes.push(k);
+    }
+  }
+  // sort in descending order
+  sizes.sort(function (a,  b) { return b - a; });
+
+  // find a combination of graphs whose size sum is in the limit
+  var limInfectGroups = [];
+  findLimGroups(limInfectGroups, sizeMap, sizes, 0, lim);
+  console.log("ref check", limInfectGroups);
+
+  // different groups might be on different versions, after the new roll out
+  // they should be on the same, most recent new version
+  var highestVersion = 0;
+  limInfectGroups.forEach(function(id) {
+    highestVersion = Math.max(highestVersion, people[id].version);
+  });
+  limInfectGroups.forEach(function(id) {
+    people[id].version = highestVersion;
+  });
+  limInfectGroups.forEach(infect);
 }
 
 function deinfect(startId) {
